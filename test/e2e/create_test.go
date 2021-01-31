@@ -1,6 +1,6 @@
-// +build integration
+// +build e2e
 
-package gridd
+package e2e
 
 import (
 	"testing"
