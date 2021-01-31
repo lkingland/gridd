@@ -13,6 +13,8 @@ jobs:
           knative_kourier: v0.20.0
           knative_eventing: v0.20.0
           config: test/e2e/cluster-config.yaml
+      - name: Cluster Info
+        run: kubectl cluster-info
       - name: Run Integration Tests
         run: make integration
 
