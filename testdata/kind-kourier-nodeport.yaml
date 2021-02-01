@@ -1,0 +1,27 @@
+# Patch for changing kourier to a NodePort for installations where a 
+# LoadBalancer is not available (for example local Kind clusters)
+spec:
+  ports:
+  - name: http2
+    nodePort: 30080
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  - name: https
+    nodePort: 30443
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  type: NodePort
+
+# TODO: can we instead use the ports defaults as of knative-kourier v0.20.0?
+#   - name: http2
+#     nodePort: 31672
+#     port: 80
+#     protocol: TCP
+#     targetPort: 8080
+#  - name: https
+#     nodePort: 30053
+#     port: 443
+#     protocol: TCP
+#     targetPort: 8443

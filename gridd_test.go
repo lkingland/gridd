@@ -1,3 +1,5 @@
+// +build !integration
+
 package gridd_test
 
 import (
@@ -6,7 +8,7 @@ import (
 	"github.com/lkingland/gridd"
 )
 
-// TestNew ensures that the Grid daemon can be instantiated.
-func TestNew(t *testing.T) {
+// TestUnit is run as a unit test
+func TestUnit(t *testing.T) {
 	_ = gridd.New()
 }
