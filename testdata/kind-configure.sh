@@ -38,6 +38,10 @@ main() {
 
   parse_command_line "$@"
 
+  sleep 30
+  kubectl get namespaces
+  kubectl get po --all-namespaces
+
   namespace 
   network
   kourier_nodeport

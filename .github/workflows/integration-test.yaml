@@ -1,12 +1,21 @@
-name: Integration Test
+name: Test
 on:   [push]
 jobs:
-  test:
+  unit-test:
     runs-on: 'ubuntu-latest'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Go
+      - name: Setup Go
+        uses: actions/setup-go@v2
+      - name: Run Unit Tests
+        run: make test
+  integration-test:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
         uses: actions/setup-go@v2
       - name: Provision Cluster
         uses: lkingland/kind-action@v1
@@ -18,7 +27,8 @@ jobs:
           knative_eventing: v0.20.0
           config: testdata/kind.yaml
       - name: Configure Cluster
-        run: testdata/kind-configure.sh
+        working-directory: testdata
+        run: ./kind-configure.sh
       - name: Run Integration Tests
         run: make integration
 
