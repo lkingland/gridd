@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/lkingland/gridd"
+	"github.com/lkingland/gridd/boson"
 )
 
 var usage = `gridd
@@ -59,7 +60,8 @@ func main() {
 func run() (err error) {
 	fmt.Println("start", version())
 
-	_ = gridd.New()
+	provider := boson.NewProvider(*Verbose)
+	_ = gridd.New(provider, gridd.WithVerbose(*Verbose))
 
 	return nil
 }
