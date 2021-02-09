@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# *****************
-# **** WARNING ****
-# This is a work-in-progress, and is neither complete nor entirely safe.
-# *****************
 #
-# Provision a kind cluster with Knative and Kourier installed.
-# Suitable for use locally during development.
-# CI uses knative-kind action
+# Allocate a local kind cluster with Knative and Kourier installed.
+#
 
 set -o errexit
 set -o nounset
@@ -31,54 +26,99 @@ main() {
   local eventing_version=v0.20.0
   local kourier_version=v0.20.0
 
+  local em=$(tput bold)$(tput setaf 2)
+  local me=$(tput sgr0)
+
+  echo "${em}Allocating...${me}"
+
   cluster
   serving
   eventing
   networking
   registry
-
-  echo "Cluster provisioned and ready to configure"
+  next_steps
+  
+  echo "${em}DONE${me}"
 }
 
 cluster() {
-  echo "Creating cluster"
-  kind create cluster --config=kind.yaml --wait=60s
+  echo "${em}① Cluster${me}"
+  cat <<EOF | kind create cluster --wait=60s --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+    extraPortMappings:
+    - containerPort: 30080
+      hostPort: 80
+      listenAddress: "127.0.0.1"
+    - containerPort: 30443
+      hostPort: 443
+      listenAddress: "127.0.0.1"
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]
+    endpoint = ["http://kind-registry:5000"]
+EOF
 }
 
 serving() {
+  echo "${em}② Knative Serving${me}"
   kubectl apply --filename https://github.com/knative/serving/releases/download/$serving_version/serving-crds.yaml
   sleep 2
   curl -L -s https://github.com/knative/serving/releases/download/$serving_version/serving-core.yaml | yq 'del(.spec.template.spec.containers[]?.resources)' -y | yq 'del(.metadata.annotations."knative.dev/example-checksum")' -y | kubectl apply -f -
-  sleep 15
-  kubectl get pod -n knative-serving
 }
 
 eventing() {
+  echo "${em}③ Knative Eventing${me}"
   kubectl apply --filename https://github.com/knative/eventing/releases/download/$eventing_version/eventing-crds.yaml
   sleep 2
   curl -L -s https://github.com/knative/eventing/releases/download/$eventing_version/eventing-core.yaml | yq 'del(.spec.template.spec.containers[]?.resources)' -y | yq 'del(.metadata.annotations."knative.dev/example-checksum")' -y | kubectl apply -f -
   curl -L -s https://github.com/knative/eventing/releases/download/$eventing_version/in-memory-channel.yaml | yq 'del(.spec.template.spec.containers[]?.resources)' -y | yq 'del(.metadata.annotations."knative.dev/example-checksum")' -y | kubectl apply -f -
   curl -L -s https://github.com/knative/eventing/releases/download/$eventing_version/mt-channel-broker.yaml | yq 'del(.spec.template.spec.containers[]?.resources)' -y | yq 'del(.metadata.annotations."knative.dev/example-checksum")' -y | kubectl apply -f -
-  sleep 15
-  kubectl get pod -n knative-eventing
 }
 
 networking() {
+  echo "${em}④ Kourier Networking${me}"
   kubectl apply --filename https://github.com/knative-sandbox/net-kourier/releases/download/$kourier_version/kourier.yaml
   kubectl patch configmap/config-network \
       --namespace knative-serving \
       --type merge \
       --patch '{"data":{"ingress.class":"kourier.ingress.networking.knative.dev"}}'
-  sleep 15
-  kubectl get pod -n kourier-system
 }
 
+
 registry() {
-  kubectl apply -f dev-provision-registry.yaml
-  # TODO: - run registry:2 docker image
-  #       - connect networks
-  #       - flag as insecure (is this possible programatically on darwin?)
-  #       - add teardown steps to cleanup script
+  # see https://kind.sigs.k8s.io/docs/user/local-registry/
+
+  echo "${em}⑤ Container Registry${me}"
+  docker run -d --restart=always -p "5000:5000" --name "kind-registry" registry:2
+  docker network connect "kind" "kind-registry"
+  cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-registry-hosting
+  namespace: kube-public
+data:
+  localRegistryHosting.v1: |
+    host: "localhost:5000"
+    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
+EOF
+}
+
+next_steps() {
+  local red=$(tput bold)$(tput setaf 1)
+
+  echo "${em}⑥ Configure Registry${me}"
+  echo "Please ${red}manually add 'kind-registry' to your local hosts${me} file:"
+  echo "  echo \"127.0.0.1 kind-registry\" | sudo tee --append /etc/hosts"
+
+  echo "Please ${red}manually set registry as insecure${me} in the docker daemon config (/etc/docker/daemon.json on linux or ~/.docker/daemon.json on OSX):
+  {
+    \"insecure-registries\": [ \"kind-registry:5000\" ],
+  }"
 
 }
 
