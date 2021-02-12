@@ -1,18 +1,10 @@
 package gridd
 
-import (
-	"fmt"
-	"os"
-)
-
-const (
-	DefaultLanguage = "go"
-	DefaultName     = "www"
-)
+const DefaultLanguage = "go"
 
 type Client struct {
 	verbose  bool
-	registry string
+	registry string // must be full path; localhost:5000/repo
 	provider Provider
 }
 
@@ -26,8 +18,8 @@ type Provider interface {
 	Create(Function) error
 	Read(Function) (string, error)
 	Update(Function) error
-	Delete(Function) error
-	List(Function) ([]string, error)
+	Delete(string) error
+	List() ([]string, error)
 }
 
 type Option func(*Client)
@@ -48,16 +40,34 @@ func New(provider Provider, options ...Option) *Client {
 	return g
 }
 
+func (g *Client) List() ([]string, error) {
+	return g.provider.List()
+}
+
 func (g *Client) Create(f Function) error {
-	if f.Root == "" {
-		f.Root, _ = os.Getwd()
-	}
+	// The only default value overridden by this library is
+	// to presume Go as the default language rather than
+	// the Func project's Node.js.
 	if f.Language == "" {
 		f.Language = DefaultLanguage
 	}
-	if f.Name == "" {
-		f.Name = DefaultName
+	// TODO: should this be the default of the client library?
+	if f.Root == "" {
+		f.Root = "."
 	}
-	fmt.Printf("Create %#v\n", f)
+
+	// TODO: the provider's Create should be synchronous.
+	// Emulate this behavior by polling until it is available or timeout.
+	// But this can not be done until such time as the provider's Create
+	// method returns a populated Function object with a name for which
+	// to check.
 	return g.provider.Create(f)
+}
+
+func (g *Client) Update(f Function) error {
+	return g.provider.Update(f)
+}
+
+func (g *Client) Delete(name string) error {
+	return g.provider.Delete(name)
 }

@@ -10,9 +10,9 @@ type Provider struct {
 	UpdateInvoked bool
 	UpdateFn      func(gridd.Function) error
 	DeleteInvoked bool
-	DeleteFn      func(gridd.Function) error
+	DeleteFn      func(string) error
 	ListInvoked   bool
-	ListFn        func(gridd.Function) ([]string, error)
+	ListFn        func() ([]string, error)
 }
 
 func NewProvider() *Provider {
@@ -20,8 +20,8 @@ func NewProvider() *Provider {
 		CreateFn: func(gridd.Function) error { return nil },
 		ReadFn:   func(gridd.Function) (string, error) { return "", nil },
 		UpdateFn: func(gridd.Function) error { return nil },
-		DeleteFn: func(gridd.Function) error { return nil },
-		ListFn:   func(gridd.Function) ([]string, error) { return []string{}, nil },
+		DeleteFn: func(string) error { return nil },
+		ListFn:   func() ([]string, error) { return []string{}, nil },
 	}
 }
 
@@ -40,12 +40,12 @@ func (p *Provider) Update(f gridd.Function) error {
 	return p.UpdateFn(f)
 }
 
-func (p *Provider) Delete(f gridd.Function) error {
+func (p *Provider) Delete(name string) error {
 	p.DeleteInvoked = true
-	return p.DeleteFn(f)
+	return p.DeleteFn(name)
 }
 
-func (p *Provider) List(f gridd.Function) ([]string, error) {
+func (p *Provider) List() ([]string, error) {
 	p.ListInvoked = true
-	return p.ListFn(f)
+	return p.ListFn()
 }

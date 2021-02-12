@@ -11,7 +11,19 @@ import (
 	"github.com/lkingland/gridd"
 )
 
-const DefaultRegistry = "localhost:5000"
+const (
+	// DefaultRegistry must contain both the registry host and
+	// registry namespace at that host until such time as
+	// the func project either seprates these values, or provides
+	// an in-cluster container registry by default.
+	// TODO: open an issue to clarify better; probably best to suggest separating
+	// Registry into RegistryHost and RegistryNamespace
+	DefaultRegistry = "localhost:5000/gridd"
+
+	// DefaultNamespace for the underlying deployments.  Must be the same
+	// as is set up and configured (see hack/configure.sh)
+	DefaultNamespace = "func"
+)
 
 type Provider struct {
 	impl *boson.Client
@@ -34,17 +46,17 @@ func (p *Provider) Read(f gridd.Function) (string, error) {
 }
 
 func (p *Provider) Update(f gridd.Function) error {
-	// Should be named Update rather than Deploy
 	// Should take a Function rather than root path
+	// Should probably be named Update rather than Deploy
 	return p.impl.Deploy(f.Root)
 }
 
-func (p *Provider) Delete(f gridd.Function) error {
-	// Should be named Delete
-	return p.impl.Remove(newBosonFunction(f))
+func (p *Provider) Delete(name string) error {
+	// Should be named Delete:
+	return p.impl.Remove(boson.Function{Name: name})
 }
 
-func (p *Provider) List(f gridd.Function) (names []string, err error) {
+func (p *Provider) List() (names []string, err error) {
 	names = []string{}
 	// Should be a simple name list, with details retreivable for each lazily.
 	ll, err := p.impl.List()
@@ -64,11 +76,22 @@ func newBosonClient(registry string, verbose bool) *boson.Client {
 	pusher := docker.NewPusher()
 	pusher.Verbose = verbose
 
-	deployer, err := knative.NewDeployer("")
+	deployer, err := knative.NewDeployer(DefaultNamespace)
 	if err != nil {
-		panic(err) // TODO: remove error from deployer constructor entirely
+		panic(err) // TODO: remove error from deployer constructor
 	}
 	deployer.Verbose = verbose
+
+	remover, err := knative.NewRemover(DefaultNamespace)
+	if err != nil {
+		panic(err) // TODO: remove error from remover constructor
+	}
+
+	lister, err := knative.NewLister(DefaultNamespace)
+	if err != nil {
+		panic(err) // TODO: remove error from lister constructor
+	}
+	lister.Verbose = verbose
 
 	return boson.New(
 		boson.WithRegistry(registry),
@@ -76,6 +99,8 @@ func newBosonClient(registry string, verbose bool) *boson.Client {
 		boson.WithBuilder(builder),
 		boson.WithPusher(pusher),
 		boson.WithDeployer(deployer),
+		boson.WithRemover(remover),
+		boson.WithLister(lister),
 	)
 }
 
