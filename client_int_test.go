@@ -1,3 +1,5 @@
+// Licensed under the Apache License, Version 2.0.  See LICENSE file.
+
 // +build integration
 
 package gridd_test

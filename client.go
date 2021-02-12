@@ -1,10 +1,10 @@
+// Licensed under the Apache License, Version 2.0.  See LICENSE file.
 package gridd
 
 const DefaultLanguage = "go"
 
 type Client struct {
 	verbose  bool
-	registry string // must be full path; localhost:5000/repo
 	provider Provider
 }
 

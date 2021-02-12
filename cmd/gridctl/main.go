@@ -72,12 +72,6 @@ func parseBool(key string, value *bool) {
 	}
 }
 
-func parseString(key string, value *string) {
-	if val, ok := os.LookupEnv(key); ok {
-		*value = val
-	}
-}
-
 func version() string {
 	// If 'vers' is not a semver already, then the binary was built either
 	// from an untagged git commit or was built directly from source
