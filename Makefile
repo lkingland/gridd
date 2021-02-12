@@ -6,7 +6,7 @@ VERS := $(shell [ -z $(VTAG) ] && echo 'tip' || echo $(VTAG) )
 
 all: build
 
-help: ## Show this help screen
+help:
 	@echo 'Usage: make <OPTIONS> ... <TARGETS>'
 	@echo ''
 	@echo 'Available targets are:'
@@ -18,7 +18,14 @@ help: ## Show this help screen
 
 ##@ Development
 
-build: test gridd gridctl ## (default) Run unit tests and build binaries
+build: gridd gridctl ## (default) build binaries for current OS
+
+check: ## Check for linting errors (requires golangci-lint)
+	golangci-lint run -E goimports -E golint -E govet
+
+cluster: ## Set up a local cluster (requires kind,yq)
+	./hack/allocate.sh
+	./hack/configure.sh
 
 ###########
 # Testing #
@@ -31,6 +38,9 @@ test: $(CODE) ## Run unit tests
 
 integration: $(CODE) ## Run integration tests
 	go test -tags integration ./...
+
+e2e: $(CODE) ## Run e2e tests
+	@echo "Not Implemented"
 
 #############
 # Artifacts #

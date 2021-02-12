@@ -1,0 +1,30 @@
+name: Build
+on: [push]
+jobs:
+  build:
+    name: Lint 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout:@v2
+      - name: Lint 
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.29 # required
+          only-new-issues: true # Only show new issues on PRs
+          args: -E goimports -E golint -E govet
+      - name: Build
+        run: make build
+  build:
+    name: Compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout:@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+      - name: Build
+        run: make build
+      
+
+
