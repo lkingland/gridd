@@ -2,6 +2,7 @@
 package boson
 
 import (
+	"context"
 	"fmt"
 
 	boson "github.com/boson-project/func"
@@ -34,33 +35,33 @@ func NewProvider(verbose bool) *Provider {
 	return &Provider{impl: newBosonClient(DefaultRegistry, verbose)}
 }
 
-func (p *Provider) Create(f gridd.Function) error {
+func (p *Provider) Create(ctx context.Context, f gridd.Function) error {
 	// This should be Create rather than "New"
-	return p.impl.New(newBosonFunction(f))
+	return p.impl.New(ctx, newBosonFunction(f))
 }
 
-func (p *Provider) Read(f gridd.Function) (string, error) {
+func (p *Provider) Read(ctx context.Context, f gridd.Function) (string, error) {
 	// Should take a func rather thann both name and root
 	// ex:  Describe(Function{Name:"A",Root:"B"})
-	desc, err := p.impl.Describe(f.Name, f.Root)
+	desc, err := p.impl.Describe(f.Name, f.Root) // FIXME: should take ctx
 	return fmt.Sprintf("%#v", desc), err
 }
 
-func (p *Provider) Update(f gridd.Function) error {
+func (p *Provider) Update(ctx context.Context, f gridd.Function) error {
 	// Should take a Function rather than root path
 	// Should probably be named Update rather than Deploy
-	return p.impl.Deploy(f.Root)
+	return p.impl.Deploy(ctx, f.Root)
 }
 
-func (p *Provider) Delete(name string) error {
+func (p *Provider) Delete(ctx context.Context, name string) error {
 	// Should be named Delete:
-	return p.impl.Remove(boson.Function{Name: name})
+	return p.impl.Remove(ctx, boson.Function{Name: name})
 }
 
-func (p *Provider) List() (names []string, err error) {
+func (p *Provider) List(ctx context.Context) (names []string, err error) {
 	names = []string{}
 	// Should be a simple name list, with details retreivable for each lazily.
-	ll, err := p.impl.List()
+	ll, err := p.impl.List(ctx)
 	if err != nil {
 		return
 	}
@@ -74,7 +75,10 @@ func newBosonClient(registry string, verbose bool) *boson.Client {
 	builder := buildpacks.NewBuilder()
 	builder.Verbose = verbose
 
-	pusher := docker.NewPusher()
+	pusher, err := docker.NewPusher()
+	if err != nil {
+		panic(err) // TODO: remove error from pusher constructor
+	}
 	pusher.Verbose = verbose
 
 	deployer, err := knative.NewDeployer(DefaultNamespace)

@@ -40,6 +40,7 @@ import (
 
 func TestList(t *testing.T) {
 	verbose := true
+	ctx := context.Background()
 
 	// Assemble
 	grid := gridd.New(
@@ -47,7 +48,7 @@ func TestList(t *testing.T) {
 		gridd.WithVerbose(verbose))
 
 	// Act
-	names, err := grid.List()
+	names, err := grid.List(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,6 +62,7 @@ func TestList(t *testing.T) {
 func TestCreate(t *testing.T) {
 	defer within(t, "testdata/example.com/create")()
 	verbose := true
+	ctx := context.Background()
 
 	// Assemble
 	grid := gridd.New(
@@ -68,13 +70,13 @@ func TestCreate(t *testing.T) {
 		gridd.WithVerbose(verbose))
 
 	// Act
-	if err := grid.Create(gridd.Function{}); err != nil {
+	if err := grid.Create(ctx, gridd.Function{}); err != nil {
 		t.Fatal(err)
 	}
 	defer del(t, grid, "create")
 
 	// Assert
-	names, err := grid.List()
+	names, err := grid.List(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,17 +96,18 @@ func TestRead(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	defer within(t, "testdata/example.com/update")()
 	verbose := true
+	ctx := context.Background()
 
 	grid := gridd.New(
 		boson.NewProvider(verbose),
 		gridd.WithVerbose(verbose))
 
-	if err := grid.Create(gridd.Function{}); err != nil {
+	if err := grid.Create(ctx, gridd.Function{}); err != nil {
 		t.Fatal(err)
 	}
 	defer del(t, grid, "update")
 
-	if err := grid.Update(gridd.Function{Root: "."}); err != nil {
+	if err := grid.Update(ctx, gridd.Function{Root: "."}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -112,21 +115,22 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	defer within(t, "testdata/example.com/delete")()
 	verbose := true
+	ctx := context.Background()
 
 	grid := gridd.New(
 		boson.NewProvider(verbose),
 		gridd.WithVerbose(verbose))
 
-	if err := grid.Create(gridd.Function{}); err != nil {
+	if err := grid.Create(ctx, gridd.Function{}); err != nil {
 		t.Fatal(err)
 	}
 	waitFor(t, grid, "delete")
 
-	if err := grid.Delete("delete"); err != nil {
+	if err := grid.Delete(ctx, "delete"); err != nil {
 		t.Fatal(err)
 	}
 
-	names, err := grid.List()
+	names, err := grid.List(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,6 +152,7 @@ func TestDelete(t *testing.T) {
 // method, or at a minimum a way to register a callback/listener for the
 // creation event.  This is what we have for now, and the show must go on.
 func del(t *testing.T, c *gridd.Client, name string) {
+	t.Helper()
 	waitFor(t, c, name)
 	if err := c.Delete(name); err != nil {
 		t.Fatal(err)
@@ -159,6 +164,7 @@ func del(t *testing.T, c *gridd.Client, name string) {
 // Create returning the derived name such that we can bake polling in.
 // Ideally the Boson provider's Creaet would be made syncrhonous.
 func waitFor(t *testing.T, c *gridd.Client, name string) {
+	t.Helper()
 	var pollInterval = 2 * time.Second
 
 	for { // ever (i.e. defer to global test timeout)
@@ -181,6 +187,7 @@ func waitFor(t *testing.T, c *gridd.Client, name string) {
 // NO:  defer within(t, "somedir")
 // YES: defer within(t, "somedir")()
 func within(t *testing.T, root string) func() {
+	t.Helper()
 	cwd := pwd(t)
 	mkdir(t, root)
 	cd(t, root)
@@ -191,6 +198,7 @@ func within(t *testing.T, root string) func() {
 }
 
 func pwd(t *testing.T) string {
+	t.Helper()
 	dir, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
@@ -199,18 +207,21 @@ func pwd(t *testing.T) string {
 }
 
 func mkdir(t *testing.T, dir string) {
+	t.Helper()
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func cd(t *testing.T, dir string) {
+	t.Helper()
 	if err := os.Chdir(dir); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func rm(t *testing.T, dir string) {
+	t.Helper()
 	if err := os.RemoveAll(dir); err != nil {
 		t.Fatal(err)
 	}

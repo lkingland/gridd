@@ -1,6 +1,8 @@
 // Licensed under the Apache License, Version 2.0.  See LICENSE file.
 package gridd
 
+import "context"
+
 const DefaultLanguage = "go"
 
 type Client struct {
@@ -15,11 +17,11 @@ type Function struct {
 }
 
 type Provider interface {
-	Create(Function) error
-	Read(Function) (string, error)
-	Update(Function) error
-	Delete(string) error
-	List() ([]string, error)
+	Create(context.Context, Function) error
+	Read(context.Context, Function) (string, error)
+	Update(context.Context, Function) error
+	Delete(context.Context, string) error
+	List(context.Context) ([]string, error)
 }
 
 type Option func(*Client)
@@ -40,11 +42,11 @@ func New(provider Provider, options ...Option) *Client {
 	return g
 }
 
-func (g *Client) List() ([]string, error) {
-	return g.provider.List()
+func (g *Client) List(ctx context.Context) ([]string, error) {
+	return g.provider.List(ctx)
 }
 
-func (g *Client) Create(f Function) error {
+func (g *Client) Create(ctx context.Context, f Function) error {
 	// The only default value overridden by this library is
 	// to presume Go as the default language rather than
 	// the Func project's Node.js.
@@ -61,13 +63,13 @@ func (g *Client) Create(f Function) error {
 	// But this can not be done until such time as the provider's Create
 	// method returns a populated Function object with a name for which
 	// to check.
-	return g.provider.Create(f)
+	return g.provider.Create(ctx, f)
 }
 
-func (g *Client) Update(f Function) error {
-	return g.provider.Update(f)
+func (g *Client) Update(ctx context.Context, f Function) error {
+	return g.provider.Update(ctx, f)
 }
 
-func (g *Client) Delete(name string) error {
-	return g.provider.Delete(name)
+func (g *Client) Delete(ctx context.Context, name string) error {
+	return g.provider.Delete(ctx, name)
 }

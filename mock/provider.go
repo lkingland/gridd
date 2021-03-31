@@ -1,52 +1,55 @@
 // Licensed under the Apache License, Version 2.0.  See LICENSE file.
 package mock
 
-import "github.com/lkingland/gridd"
+import (
+	"context"
+	"github.com/lkingland/gridd"
+)
 
 type Provider struct {
 	CreateInvoked bool
-	CreateFn      func(gridd.Function) error
+	CreateFn      func(context.Context, gridd.Function) error
 	ReadInvoked   bool
-	ReadFn        func(gridd.Function) (string, error)
+	ReadFn        func(context.Context, gridd.Function) (string, error)
 	UpdateInvoked bool
-	UpdateFn      func(gridd.Function) error
+	UpdateFn      func(context.Context, gridd.Function) error
 	DeleteInvoked bool
-	DeleteFn      func(string) error
+	DeleteFn      func(context.Context, string) error
 	ListInvoked   bool
-	ListFn        func() ([]string, error)
+	ListFn        func(context.Context) ([]string, error)
 }
 
 func NewProvider() *Provider {
 	return &Provider{
-		CreateFn: func(gridd.Function) error { return nil },
-		ReadFn:   func(gridd.Function) (string, error) { return "", nil },
-		UpdateFn: func(gridd.Function) error { return nil },
-		DeleteFn: func(string) error { return nil },
-		ListFn:   func() ([]string, error) { return []string{}, nil },
+		CreateFn: func(context.Context, gridd.Function) error { return nil },
+		ReadFn:   func(context.Context, gridd.Function) (string, error) { return "", nil },
+		UpdateFn: func(context.Context, gridd.Function) error { return nil },
+		DeleteFn: func(context.Context, string) error { return nil },
+		ListFn:   func(context.Context) ([]string, error) { return []string{}, nil },
 	}
 }
 
-func (p *Provider) Create(f gridd.Function) error {
+func (p *Provider) Create(ctx context.Context, f gridd.Function) error {
 	p.CreateInvoked = true
-	return p.CreateFn(f)
+	return p.CreateFn(ctx, f)
 }
 
-func (p *Provider) Read(f gridd.Function) (string, error) {
+func (p *Provider) Read(ctx context.Context, f gridd.Function) (string, error) {
 	p.ReadInvoked = true
-	return p.ReadFn(f)
+	return p.ReadFn(ctx, f)
 }
 
-func (p *Provider) Update(f gridd.Function) error {
+func (p *Provider) Update(ctx context.Context, f gridd.Function) error {
 	p.UpdateInvoked = true
-	return p.UpdateFn(f)
+	return p.UpdateFn(ctx, f)
 }
 
-func (p *Provider) Delete(name string) error {
+func (p *Provider) Delete(ctx context.Context, name string) error {
 	p.DeleteInvoked = true
-	return p.DeleteFn(name)
+	return p.DeleteFn(ctx, name)
 }
 
-func (p *Provider) List() ([]string, error) {
+func (p *Provider) List(ctx context.Context) ([]string, error) {
 	p.ListInvoked = true
-	return p.ListFn()
+	return p.ListFn(ctx)
 }

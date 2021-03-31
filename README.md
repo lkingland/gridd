@@ -4,7 +4,10 @@ Proof-of-concept Boson Func client for use in rapid prototyping.
 
 Run `make help` for available actions.
 
-### Local Cluster Required
+## Building
+
+
+## Local Cluster Requirement
 
 The Grid Daemon (gridd) requires an available Kubernetes-compliant cluster with
 Knative installed and a few configuration modifications.  For local development

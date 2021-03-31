@@ -5,6 +5,7 @@
 package gridd_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/lkingland/gridd"
@@ -18,7 +19,7 @@ func TestList(t *testing.T) {
 		p = mock.NewProvider()
 		c = gridd.New(p)
 	)
-	names, err := c.List()
+	names, err := c.List(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +39,7 @@ func TestCreate(t *testing.T) {
 		c = gridd.New(p)
 		f = gridd.Function{}
 	)
-	if err := c.Create(f); err != nil {
+	if err := c.Create(context.Background(), f); err != nil {
 		t.Fatal(err)
 	}
 	if !p.CreateInvoked {
@@ -54,14 +55,14 @@ func TestCreateDefaultsLanguage(t *testing.T) {
 		c = gridd.New(p)
 		f = gridd.Function{}
 	)
-	p.CreateFn = func(x gridd.Function) error {
+	p.CreateFn = func(ctx context.Context, x gridd.Function) error {
 		if x.Language != gridd.DefaultLanguage {
 			t.Fatalf("Default language not applied.  Expected '%v' got '%v'",
 				gridd.DefaultLanguage, x.Language)
 		}
 		return nil
 	}
-	if err := c.Create(f); err != nil {
+	if err := c.Create(context.Background(), f); err != nil {
 		t.Fatal(f)
 	}
 	if !p.CreateInvoked {
@@ -76,7 +77,7 @@ func TestUpdate(t *testing.T) {
 		p = mock.NewProvider()
 		c = gridd.New(p)
 	)
-	if err := c.Delete("myfunc"); err != nil {
+	if err := c.Delete(context.Background(), "myfunc"); err != nil {
 		t.Fatal(err)
 	}
 	if !p.DeleteInvoked {
